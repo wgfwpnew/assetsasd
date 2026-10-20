@@ -340,12 +340,12 @@
   function init() {
     if (document.body) {
       initializeUI();
-      autoMergeFiles();
+      window.fileMergerReady = autoMergeFiles();
     } else {
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
           initializeUI();
-          autoMergeFiles();
+          window.fileMergerReady = autoMergeFiles();
         });
       } else {
         setTimeout(init, 10);
