@@ -1,0 +1,424 @@
+<html lang="en"><head><!-- w3-yield --><script>/* w3-yield v2 — INP guard for games framed on the same site (v1 + hover hold, 2026-10-03).
+   A same-site iframe shares the parent page's main thread: a click on the host page (Wide,
+   Fullscreen, servers, stars, links…) waits for whatever game frame is running (field input
+   delay ~190 ms on school Chromebooks) and its paint waits for the next one. v1 skipped one game
+   frame after the input — that only fixes the paint. v2 also pauses the game's animation frames
+   while the pointer rests on a control of the host page (max 1.5 s per hover, refreshed by
+   movement), so the main thread is idle when the click lands. Any input inside the game resumes
+   it at once; the game's own input and timing are otherwise untouched. */
+(function () {
+  var w = window, raf = w.requestAnimationFrame, caf = w.cancelAnimationFrame
+  if (!raf || w.__w3yield || w === w.top) return
+  var par; try { par = w.top; par.document } catch (e) { return } // cross-origin: nothing shared
+  w.__w3yield = 2
+  var hold = 0, until = 0, start = 0, map = {}, seq = 0
+  var CTL = 'a,button,input,select,textarea,label,summary,[role=button],[role=tab],[role=menuitem],[onclick],ins'
+  function now() { return Date.now() }
+  function mark() { if (!hold) hold = 1 }
+  function hover(e) {
+    var t = e.target, c = t && t.closest && t.closest(CTL)
+    if (!c || c.tagName === 'IFRAME') { until = 0; return }
+    var n = now()
+    if (!until) start = n
+    if (n - start < 1500) until = Math.min(n + 700, start + 1500)
+  }
+  function leave() { until = 0 }
+  try {
+    ;['pointerdown', 'keydown', 'click'].forEach(function (t) { par.addEventListener(t, mark, true) })
+    par.addEventListener('pointermove', hover, { capture: true, passive: true })
+    par.addEventListener('pointerover', hover, { capture: true, passive: true })
+    par.document.addEventListener('pointerleave', leave, true)
+  } catch (e) {}
+  ;['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (t) { w.addEventListener(t, leave, { capture: true, passive: true }) })
+  w.requestAnimationFrame = function (cb) {
+    var id = ++seq
+    var run = function (ts) {
+      if (hold || (until && now() < until)) {
+        if (hold === 1) { hold = 2; setTimeout(function () { hold = 0 }, 0) }
+        map[id] = raf.call(w, run); return
+      }
+      delete map[id]; cb(ts)
+    }
+    map[id] = raf.call(w, run)
+    return id
+  }
+  w.cancelAnimationFrame = function (id) { if (map[id] != null) { caf.call(w, map[id]); delete map[id] } }
+  try { w.webkitRequestAnimationFrame = w.requestAnimationFrame } catch (e) {}
+})()</script><!-- /w3-yield -->
+<!-- W3-SITELOCK-KILLER v1 -->
+<script>
+(function(){
+  if (window.__w3SitelockKilled) return;
+  window.__w3SitelockKilled = true;
+  var bad = /poki\.com\/sitelock|poki-gdn\.com\/sitelock|poki\.com\/embed-error/i;
+  // Block window.open
+  var _open = window.open;
+  window.open = function(url){ if (url && bad.test(String(url))) return null; return _open.apply(window, arguments); };
+  // Block document.location/window.location assignments to sitelock
+  try {
+    var origAssign = window.location.assign && window.location.assign.bind(window.location);
+    var origReplace = window.location.replace && window.location.replace.bind(window.location);
+    if (origAssign) window.location.assign = function(u){ if (u && bad.test(String(u))) return; return origAssign(u); };
+    if (origReplace) window.location.replace = function(u){ if (u && bad.test(String(u))) return; return origReplace(u); };
+  } catch(e){}
+  // Block top-level location.href setter via wrapping (some scripts do `top.location.href = '...'`)
+  try {
+    var _href = Object.getOwnPropertyDescriptor(window.Location.prototype, 'href');
+    if (_href && _href.set) {
+      Object.defineProperty(window.Location.prototype, 'href', {
+        configurable: true, enumerable: true, get: _href.get,
+        set: function(v){ if (v && bad.test(String(v))) return; return _href.set.call(this, v); }
+      });
+    }
+  } catch(e){}
+  // Stop submission of forms targeting sitelock
+  document.addEventListener('submit', function(e){
+    try { if (e.target && bad.test(String(e.target.action || ''))) e.preventDefault(); } catch(_){}
+  }, true);
+  // Final defensive: if at any point location is on sitelock URL, navigate back.
+  try {
+    setInterval(function(){
+      try { if (bad.test(window.location.href)) window.history.back(); } catch(_){}
+    }, 500);
+  } catch(e){}
+})();
+</script>
+<!-- /W3-SITELOCK-KILLER -->
+<!-- History guard for H5 rewarded ads (2026-10-02) -->
+<script>
+(function () {
+  // Google's H5 Ads SDK pushes #goog_fullscreen_ad via history.pushState when
+  // a rewarded/interstitial ad starts, then calls history.back() when it ends.
+  // Inside an iframe (or a fresh tab) there is no back-history entry, so
+  // history.back() navigates the frame to about:blank — killing the game.
+  // Fix: replaceState a sentinel on load so there is always a landing entry,
+  // and re-push on popstate to stay resilient across multiple ad cycles.
+  if (!history.state || !history.state._rbGuard) {
+    history.replaceState({ _rbGuard: true }, '');
+  }
+  window.addEventListener('popstate', function () {
+    if (!history.state || !history.state._rbGuard) {
+      history.pushState({ _rbGuard: true }, '');
+    }
+  });
+})();
+</script>
+
+        <!-- Generated by GameMaker:Studio http://www.yoyogames.com/gamemaker/studio -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta http-equiv="pragma" content="no-cache">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta charset="utf-8">
+
+        <!-- Set the title bar of the page -->
+        <title>Retro Bowl Unblocked - ClassRoom6x</title>
+        <meta name="description" content="Retro Bowl is an American style football game created by New Star Games">
+        <meta name="website" content="classroom6x.gitlab.io" />
+        
+
+        <!-- Set the background colour of the document -->
+        <style>
+            /* body {
+              background: #0;
+              color:#cccccc;
+              margin: 0px;
+              padding: 0px;
+              border: 0px;
+            } */
+            canvas {
+                      image-rendering: pixelated;
+                      -webkit-interpolation-mode: nearest-neighbor;
+                      -ms-touch-action: none;
+                      margin: 0px;
+                      padding: 0px;
+                      border: 0px;
+            }
+            :-webkit-full-screen #canvas {
+                 width: 100vw;
+                 height: 100vh;
+            }
+            div.gm4html5_div_class
+            {
+              margin: 0px;
+              padding: 0px;
+              border: 0px;
+            }
+            /* START - Login Dialog Box */
+            div.gm4html5_login
+            {
+                 padding: 20px;
+                 position: absolute;
+                 border: solid 2px #000000;
+                 background-color: #404040;
+                 color:#00ff00;
+                 border-radius: 15px;
+                 box-shadow: #101010 20px 20px 40px;
+            }
+            div.gm4html5_cancel_button
+            {
+                 float: right;
+            }
+            div.gm4html5_login_button
+            {
+                 float: left;
+            }
+            div.gm4html5_login_header
+            {
+                 text-align: center;
+            }
+            /* END - Login Dialog Box */
+            :-webkit-full-screen {
+               width: 100%;
+               height: 100%;
+            }
+        </style>
+<style>
+.pokiSdkContainer {
+	overflow: hidden;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pokiSdkContainer.pokiSdkFixed {
+	position: fixed;
+}
+
+.pokiSdkContainer.pokiSdkVisible {
+	display: block;
+}
+
+.pokiSdkContainer.pokiSdkHidden,
+.pokiSdkSpinnerContainer.pokiSdkHidden {
+	display: none;
+}
+
+.pokiSdkContainer.pokiSdkHidden,
+.pokiSdkSpinnerContainer {
+	pointer-events: none;
+}
+
+.pokiSdkSpinnerContainer {
+	z-index: 10;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: url('https://a.poki.com/images/thumb_anim_2x.gif') 50% 50% no-repeat;
+	user-select: none;
+}
+
+.pokiSdkInsideContainer {
+	background: #000;
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+
+	opacity: 0;
+	-webkit-transition: opacity 0.5s ease-in-out;
+	-moz-transition: opacity 0.5s ease-in-out;
+	-ms-transition: opacity 0.5s ease-in-out;
+	-o-transition: opacity 0.5s ease-in-out;
+	transition: opacity 0.5s ease-in-out;
+}
+
+.pokiSdkContainer.pokiSdkVisible .pokiSdkInsideContainer {
+	opacity: 1;
+}
+
+.pokiSDKAdContainer, .pokiSdkVideoContainer {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+
+.pokiSdkStartAdButton {
+	position: absolute;
+	z-index: 9999;
+	top: 0;
+
+	padding-top: 10%;
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	color: #FFF;
+
+	font: 700 15pt 'Arial', sans-serif;
+	font-weight: bold;
+	letter-spacing: 1px;
+	transition: 0.1s ease-in-out;
+	line-height: 1em;
+}
+
+.pokiSdkPauseButton {
+	cursor:pointer;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+}
+
+.pokiSdkPauseButton:before {
+	content: '';
+	position: absolute;
+	width: 100px;
+	height: 100px;
+	display: block;
+	border: 2px solid #fff;
+	border-radius: 50%;
+	user-select: none;
+	background-color: rgba(0, 0, 0, 0.6);
+	transition: background-color 0.5s ease;
+	animation: 1s linear infinite pulse;
+}
+
+.pokiSdkPauseButton:after {
+	content: '';
+	position: absolute;
+	display: block;
+	box-sizing: border-box;
+	border-color: transparent transparent transparent #fff;
+	border-style: solid;
+	border-width: 26px 0 26px 40px;
+	pointer-events: none;
+	animation: 1s linear infinite pulse;
+	left: 6px;
+}
+.pokiSdkPauseButtonBG {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: block;
+    content: '';
+    background: rgba(0, 43, 80, 0.5);
+    width: 100%;
+    height: 100%;
+}
+
+.pokiSdkPauseButtonBG:hover{
+	background: rgba(0, 43, 80, 0.7);
+}
+
+@keyframes pulse {
+	0% {
+		transform: translate(-50%, -50%) scale(0.95);
+	}
+	70% {
+		transform: translate(-50%, -50%) scale(1.1);
+	}
+	100% {
+		transform: translate(-50%, -50%) scale(0.95);
+	}
+}
+
+.pokiSdkProgressContainer {
+	background: #B8C7DD;
+	width: 100%;
+	height: 5px;
+	position: absolute;
+	bottom: 0;
+	z-index: 9999;
+}
+
+.pokiSdkProgressBar {
+	position:relative;
+	bottom:0px;
+	background: #FFDC00;
+	height: 100%;
+	width: 0%;
+	transition: width 0.5s;
+	transition-timing-function: linear;
+}
+
+.pokiSdkProgressBar.pokiSdkVisible, .pokiSdkPauseButton.pokiSdkVisible, .pokiSdkStartAdButton.pokiSdkVisible {
+	display: block;
+	pointer-events: auto;
+}
+
+.pokiSdkProgressBar.pokiSdkHidden, .pokiSdkPauseButton.pokiSdkHidden, .pokiSdkStartAdButton.pokiSdkHidden {
+	display: none;
+	pointer-events: none;
+}
+</style></head>
+
+    <body style="overflow:hidden;">
+   
+        <div class="gm4html5_div_class" id="gm4html5_div_id">
+        <img src="html5game/splash.png" id="GM4HTML5_loadingscreen" alt="GameMaker:HTML5 loading screen" style="display:none;">
+            <!-- Create the canvas element the game draws to -->
+	    <canvas id="canvas" style="touch-action: none; position: absolute; inset: 50% -50% -50% 50%; transform: translate(-50%, -50%);">
+                     <p>Your browser doesn't support HTML5 canvas.</p>
+            </canvas>
+        </div>
+
+        <!-- Run the game code -->
+        <script type="text/javascript" src="html5game/RetroBowl.js?ILABC=1551937871"></script>
+        <!-- Poki start -->
+<!-- Google H5 Games Ads (same-origin copy only: AdSense judges the frame's origin). Loaded once the
+     game has started so the 7 MB engine wins the first bytes; the queue shim keeps adBreak() safe. -->
+<script>
+window.adsbygoogle = window.adsbygoogle || [];
+window.adBreak = window.adBreak || function (o) { adsbygoogle.push(o) };
+window.adConfig = window.adConfig || function (o) { adsbygoogle.push(o) };
+window.adConfig({ preloadAdBreaks: 'on', sound: 'on' });
+window.__rbAfg = true;
+(function () {
+  var done = 0
+  function load () {
+    if (done) return; done = 1
+    var s = document.createElement('script'); s.async = true; s.crossOrigin = 'anonymous'
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6875580793823494'
+    s.setAttribute('data-ad-client', 'ca-pub-6875580793823494'); s.setAttribute('data-ad-frequency-hint', '30s')
+    s.onerror = function () { window.__rbAfg = false }
+    document.head.appendChild(s)
+  }
+  window.addEventListener('load', function () { setTimeout(load, 4000) })
+  ;['pointerdown', 'keydown', 'touchstart'].forEach(function (e) { window.addEventListener(e, load, { passive: true, once: true }) })
+})()
+</script>
+<script src="poki-sdk-stub.js?v=20260922h"></script>
+<script>(function() {
+    function fin(ok) {
+	// var _0x1918=['top','indexOf','amF2YXNjcmlwdDp2b2lkKDAp','hostname','length','location','LnBva2ktZ2RuLmNvbQ==','href'];(function(_0x4a02b5,_0x5c0c3d){var _0x56a85d=function(_0x375c0e){while(--_0x375c0e){_0x4a02b5['push'](_0x4a02b5['shift']());}};_0x56a85d(++_0x5c0c3d);}(_0x1918,0x1ae));var _0xcdc9=function(_0x4a02b5,_0x5c0c3d){_0x4a02b5=_0x4a02b5-0x0;var _0x56a85d=_0x1918[_0x4a02b5];return _0x56a85d;};(function checkInit(){var _0x151adb=['bG9jYWxob3N0','LnBva2kuY29t',_0xcdc9('0x0')];var _0x219654=![];var _0x558823=window[_0xcdc9('0x7')][_0xcdc9('0x5')];for(var _0x220888=0x0;_0x220888<_0x151adb[_0xcdc9('0x6')];_0x220888++){var _0x4a2f49=atob(_0x151adb[_0x220888]);if(_0x558823[_0xcdc9('0x3')](_0x4a2f49,_0x558823['length']-_0x4a2f49['length'])!==-0x1){_0x219654=!![];break;}}if(!_0x219654){var _0xcff8e8=_0xcdc9('0x4');var _0x3296f7=atob(_0xcff8e8);window['location'][_0xcdc9('0x1')]=_0x3296f7;this[_0xcdc9('0x2')][_0xcdc9('0x7')]!==this[_0xcdc9('0x7')]&&(this[_0xcdc9('0x2')][_0xcdc9('0x7')]=this[_0xcdc9('0x7')]);}}());
+        window.PokiSDK_OK = ok;
+        GameMaker_Init();
+    }
+    var __finOnce = false;
+    function finSafe(ok) {
+        if (__finOnce) return;
+        __finOnce = true;
+        try { fin(ok); } catch (e) { try { GameMaker_Init(); } catch (e2) {} }
+    }
+    window.addEventListener("load", function(_) {
+        window.PokiSDK_loadState = 0;
+        // Failsafe: start the game even if PokiSDK.init() never settles
+        // (Poki API can hang/redirect when embedded on a non-Poki domain).
+        setTimeout(function() { finSafe(false); }, 2500);
+        try {
+            if (window.PokiSDK && window.PokiSDK.init) {
+                PokiSDK.init().then(function() { finSafe(true); }).catch(function() { finSafe(false); });
+            } else {
+                window.PokiSDK = null;
+                finSafe(false);
+            }
+        } catch (e) {
+            finSafe(false);
+        }
+        //PokiSDK.setDebug(true); <-- Uncomment this line for debugging
+    });
+    })();
+</script>
+<!-- Poki end -->
+    </body></html>
