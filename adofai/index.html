@@ -39,7 +39,7 @@ button{color:#ffcf65;background:#252525;border:1px solid #d6a538;border-radius:8
 <script>
 "use strict";
 // Build and StreamingAssets must be alongside this page.
-const BUILD="Build/", VERSION="tinkle-routing-6", PARTS={data:9,wasm:7};
+const BUILD="Build/", VERSION="tinkle-routing-9", PARTS={data:17,wasm:14};
 const canvas=document.getElementById("unity-canvas"), loading=document.getElementById("loading"), status=document.getElementById("status"), progress=document.getElementById("tinkle-progress"), retry=document.getElementById("retry");
 const objectUrls=[];
 let unityInstance,failed=false,completed=0;
@@ -95,7 +95,7 @@ async function joinParts(name,count,type){
     const bytes=await response.arrayBuffer();
     if(!bytes.byteLength)throw new Error(filename+" is empty.");
     buffers.push(bytes);completed++;
-    if(!failed){setProgress(completed/16*.75);status.textContent="Loading game files… "+completed+" / 16";}
+    if(!failed){setProgress(completed/31*.75);status.textContent="Loading game files… "+completed+" / 31";}
   }
   const url=URL.createObjectURL(new Blob(buffers,{type}));objectUrls.push(url);return url;
 }
